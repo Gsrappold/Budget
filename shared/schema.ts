@@ -12,6 +12,8 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   displayName: text("display_name"),
   photoURL: text("photo_url"),
+  isAdmin: boolean("is_admin").default(false).notNull(),
+  isDisabled: boolean("is_disabled").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -75,12 +77,24 @@ export const goals = pgTable("goals", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Admin Logs table - tracks admin actions
+export const adminLogs = pgTable("admin_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(), // e.g., 'made_admin', 'disabled_account', 'deleted_account', 'reset_password'
+  targetUserId: varchar("target_user_id"),
+  targetUserEmail: text("target_user_email"),
+  details: text("details"), // Additional context about the action
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   categories: many(categories),
   transactions: many(transactions),
   budgets: many(budgets),
   goals: many(goals),
+  adminLogs: many(adminLogs),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -121,6 +135,13 @@ export const goalsRelations = relations(goals, ({ one }) => ({
   }),
 }));
 
+export const adminLogsRelations = relations(adminLogs, ({ one }) => ({
+  admin: one(users, {
+    fields: [adminLogs.adminId],
+    references: [users.id],
+  }),
+}));
+
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
@@ -157,6 +178,11 @@ export const insertGoalSchema = createInsertSchema(goals).omit({
   currentAmount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Amount must be a valid number").optional(),
 });
 
+export const insertAdminLogSchema = createInsertSchema(adminLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 // TypeScript types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -172,3 +198,6 @@ export type InsertBudget = z.infer<typeof insertBudgetSchema>;
 
 export type Goal = typeof goals.$inferSelect;
 export type InsertGoal = z.infer<typeof insertGoalSchema>;
+
+export type AdminLog = typeof adminLogs.$inferSelect;
+export type InsertAdminLog = z.infer<typeof insertAdminLogSchema>;
