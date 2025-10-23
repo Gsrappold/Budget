@@ -38,19 +38,25 @@ export async function authenticateUser(
     const idToken = authHeader.split("Bearer ")[1];
 
     try {
-      // Verify the Firebase ID token
+      // Try to verify the Firebase ID token
       const decodedToken = await getAuth().verifyIdToken(idToken);
       req.userId = decodedToken.uid;
       next();
-    } catch (error) {
-      // In development mode, allow requests without strict token verification
-      // This is for demo purposes only - remove in production
+    } catch (verifyError) {
+      // In development mode, decode the token without verification
+      // This is for demo purposes when Firebase Admin SDK is not fully configured
       if (process.env.NODE_ENV === "development") {
-        // Extract userId from query or body as fallback in development
-        const userId = (req.query.userId || req.body?.userId) as string;
-        if (userId) {
-          req.userId = userId;
-          return next();
+        try {
+          // Decode the token without verification to extract the uid
+          const base64Payload = idToken.split('.')[1];
+          const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString());
+          
+          if (payload.user_id) {
+            req.userId = payload.user_id;
+            return next();
+          }
+        } catch (decodeError) {
+          console.warn("Failed to decode token in development mode:", decodeError);
         }
       }
       return res.status(401).json({ error: "Invalid authentication token" });

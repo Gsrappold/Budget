@@ -13,7 +13,8 @@ import {
   TrendingUp, 
   Target, 
   Plus,
-  ArrowRight 
+  ArrowRight,
+  Receipt
 } from "lucide-react";
 import { Link } from "wouter";
 import { 
