@@ -29,7 +29,18 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    // Extract userId from queryKey if present
+    const [url, ...params] = queryKey;
+    const userId = params[0] as string | undefined;
+    
+    let fetchUrl = url as string;
+    if (userId && fetchUrl.startsWith("/api/")) {
+      // Append userId as query parameter for API calls
+      const separator = fetchUrl.includes("?") ? "&" : "?";
+      fetchUrl = `${fetchUrl}${separator}userId=${userId}`;
+    }
+    
+    const res = await fetch(fetchUrl, {
       credentials: "include",
     });
 
