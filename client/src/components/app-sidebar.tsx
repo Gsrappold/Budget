@@ -5,7 +5,8 @@ import {
   Target, 
   Settings,
   TrendingUp,
-  LogOut
+  LogOut,
+  Shield
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -34,9 +35,11 @@ const menuItems = [
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
+const adminMenuItem = { title: "Admin", url: "/admin", icon: Shield };
+
 export function AppSidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
@@ -87,6 +90,16 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === adminMenuItem.url}>
+                    <Link href={adminMenuItem.url} data-testid="link-admin">
+                      <adminMenuItem.icon className="w-5 h-5" />
+                      <span>{adminMenuItem.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
