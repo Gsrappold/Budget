@@ -22,8 +22,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let user = await storage.getUser(data.id);
       
       if (!user) {
-        // Create new user
-        user = await storage.createUser(data);
+        // Create new user with admin status for specific email
+        const isAdminEmail = data.email === "gabe.rappold@gmail.com";
+        user = await storage.createUser({
+          ...data,
+          isAdmin: isAdminEmail,
+        });
         
         // Create default categories for new user
         const defaultCategories = [
@@ -38,6 +42,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const cat of defaultCategories) {
           await storage.createCategory({ ...cat, userId: user.id });
+        }
+      } else {
+        // For existing users, check the stored email (not the request email) and promote if needed
+        if (user.email === "gabe.rappold@gmail.com" && !user.isAdmin) {
+          user = await storage.updateUserAdmin(user.id, true);
         }
       }
       
