@@ -15,6 +15,7 @@ import BudgetsPage from "@/pages/budgets";
 import GoalsPage from "@/pages/goals";
 import AnalyticsPage from "@/pages/analytics";
 import SettingsPage from "@/pages/settings";
+import AdminDashboard from "@/pages/admin-dashboard";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
@@ -30,6 +31,28 @@ function ProtectedRoute({ component: Component }: { component: () => JSX.Element
 
   if (!user) {
     return <Redirect to="/auth" />;
+  }
+
+  return <Component />;
+}
+
+function AdminRoute({ component: Component }: { component: () => JSX.Element }) {
+  const { user, isAdmin, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Redirect to="/auth" />;
+  }
+
+  if (!isAdmin) {
+    return <Redirect to="/" />;
   }
 
   return <Component />;
@@ -77,6 +100,9 @@ function Router() {
       </Route>
       <Route path="/settings">
         <ProtectedRoute component={SettingsPage} />
+      </Route>
+      <Route path="/admin">
+        <AdminRoute component={AdminDashboard} />
       </Route>
 
       <Route component={NotFound} />
