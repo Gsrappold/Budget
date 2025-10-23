@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { auth } from "firebase-admin";
+import { getAuth } from "firebase-admin/auth";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 
 // Initialize Firebase Admin if not already initialized
@@ -39,7 +39,7 @@ export async function authenticateUser(
 
     try {
       // Verify the Firebase ID token
-      const decodedToken = await auth().verifyIdToken(idToken);
+      const decodedToken = await getAuth().verifyIdToken(idToken);
       req.userId = decodedToken.uid;
       next();
     } catch (error) {
