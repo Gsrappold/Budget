@@ -32,12 +32,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Sync user with backend and get user data
       if (firebaseUser) {
         try {
-          const userData = await apiRequest("POST", "/api/users/sync", {
+          const response = await apiRequest("POST", "/api/users/sync", {
             id: firebaseUser.uid,
             email: firebaseUser.email,
             displayName: firebaseUser.displayName,
             photoURL: firebaseUser.photoURL,
-          }) as DBUser;
+          });
+          const userData = await response.json() as DBUser;
           setDbUser(userData);
         } catch (error) {
           console.error("Failed to sync user:", error);

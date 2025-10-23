@@ -5,6 +5,7 @@ import {
   transactions,
   budgets,
   goals,
+  adminLogs,
   type User, 
   type InsertUser,
   type Category,
@@ -14,16 +15,22 @@ import {
   type Budget,
   type InsertBudget,
   type Goal,
-  type InsertGoal
+  type InsertGoal,
+  type AdminLog,
+  type InsertAdminLog
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, count, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUserAdmin(id: string, isAdmin: boolean): Promise<User>;
+  updateUserDisabled(id: string, isDisabled: boolean): Promise<User>;
+  deleteUser(id: string): Promise<void>;
 
   // Categories
   getCategories(userId: string): Promise<Category[]>;
@@ -51,6 +58,16 @@ export interface IStorage {
   createGoal(goal: InsertGoal): Promise<Goal>;
   updateGoal(id: string, goal: Partial<InsertGoal>): Promise<Goal>;
   deleteGoal(id: string): Promise<void>;
+
+  // Admin
+  getAdminLogs(limit?: number): Promise<AdminLog[]>;
+  createAdminLog(log: InsertAdminLog): Promise<AdminLog>;
+  getSystemStats(): Promise<{
+    totalUsers: number;
+    activeUsers: number;
+    totalTransactions: number;
+    totalBudgets: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -71,6 +88,35 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .orderBy(desc(users.createdAt));
+  }
+
+  async updateUserAdmin(id: string, isAdmin: boolean): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ isAdmin })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserDisabled(id: string, isDisabled: boolean): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ isDisabled })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Categories
@@ -198,6 +244,57 @@ export class DatabaseStorage implements IStorage {
 
   async deleteGoal(id: string): Promise<void> {
     await db.delete(goals).where(eq(goals.id, id));
+  }
+
+  // Admin
+  async getAdminLogs(limit: number = 50): Promise<AdminLog[]> {
+    return await db
+      .select()
+      .from(adminLogs)
+      .orderBy(desc(adminLogs.createdAt))
+      .limit(limit);
+  }
+
+  async createAdminLog(insertLog: InsertAdminLog): Promise<AdminLog> {
+    const [log] = await db
+      .insert(adminLogs)
+      .values(insertLog)
+      .returning();
+    return log;
+  }
+
+  async getSystemStats(): Promise<{
+    totalUsers: number;
+    activeUsers: number;
+    totalTransactions: number;
+    totalBudgets: number;
+  }> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [totalUsersResult] = await db
+      .select({ count: count() })
+      .from(users);
+
+    const [activeUsersResult] = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.isDisabled, false));
+
+    const [totalTransactionsResult] = await db
+      .select({ count: count() })
+      .from(transactions);
+
+    const [totalBudgetsResult] = await db
+      .select({ count: count() })
+      .from(budgets);
+
+    return {
+      totalUsers: totalUsersResult.count,
+      activeUsers: activeUsersResult.count,
+      totalTransactions: totalTransactionsResult.count,
+      totalBudgets: totalBudgetsResult.count,
+    };
   }
 }
 
