@@ -1,6 +1,45 @@
+# Dependencies
 node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
 dist
-.DS_Store
+dist-ssr
+*.local
 server/public
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs
+*.log
+
+# Misc
 vite.config.ts.*
 *.tar.gz
+.replit
+replit.nix
+
+# Production
+*.tsbuildinfo
+
+# Testing
+coverage
