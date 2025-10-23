@@ -145,6 +145,9 @@ export const adminLogsRelations = relations(adminLogs, ({ one }) => ({
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
+}).extend({
+  isAdmin: z.boolean().optional(),
+  isDisabled: z.boolean().optional(),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({

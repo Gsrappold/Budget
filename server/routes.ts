@@ -52,6 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(user);
     } catch (error) {
+      console.error("User sync error:", error);
       res.status(400).json({ error: "Invalid user data" });
     }
   });
